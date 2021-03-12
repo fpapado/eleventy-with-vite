@@ -12,9 +12,11 @@
     "@11ty/eleventy": "^0.11.1"
   },
   "scripts": {
+    "//": "In development, run Eleventy and Vite in parallel",
     "dev": "concurrently npm:dev:*",
     "dev:eleventy": "eleventy --serve",
-    "build":"",
+    "dev:vite": "vite",
+    "build": "",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

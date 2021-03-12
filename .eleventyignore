@@ -1,0 +1,2 @@
+# Ignore the client scripts; Vite is serving or building them
+src/client/
