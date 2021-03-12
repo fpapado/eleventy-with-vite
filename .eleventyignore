@@ -1,2 +1,3 @@
-# Ignore the client scripts; Vite is serving or building them
-src/client/
+# Ignore the client scripts and CSS; Vite is serving or building them
+src/client/*.js
+src/client/*.css

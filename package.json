@@ -3,25 +3,23 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "dependencies": {
-    "@vitejs/plugin-legacy": "^1.3.1",
-    "concurrently": "^6.0.0",
-    "vite": "^2.0.5"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@11ty/eleventy": "^0.11.1",
-    "serve": "^11.3.2"
+    "@babel/standalone": "7.13.9",
+    "@vitejs/plugin-legacy": "^1.3.1",
+    "concurrently": "^6.0.0",
+    "serve": "^11.3.2",
+    "vite": "^2.0.5"
   },
   "scripts": {
-    "//": "In development, run Eleventy and Vite in parallel",
+    "//": "Example of the built site running",
     "dev": "concurrently npm:dev:*",
     "dev:eleventy": "eleventy --serve",
     "dev:vite": "vite",
-    "//": "In production, run Vite and Eleventy in sequence, because we want to read the asset manifest to inject scripts in our templates",
     "build": "npm run build:vite && npm run build:eleventy",
     "build:eleventy": "NODE_ENV=production eleventy",
     "build:vite": "NODE_ENV=production vite build",
-    "//": "Example of the built site running",
     "prod": "NODE_ENV=production npm run build && serve _site"
   },
   "author": "",
