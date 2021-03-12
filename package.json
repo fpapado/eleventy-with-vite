@@ -9,7 +9,8 @@
     "vite": "^2.0.5"
   },
   "devDependencies": {
-    "@11ty/eleventy": "^0.11.1"
+    "@11ty/eleventy": "^0.11.1",
+    "serve": "^11.3.2"
   },
   "scripts": {
     "//": "In development, run Eleventy and Vite in parallel",
@@ -20,7 +21,8 @@
     "build": "npm run build:vite && npm run build:eleventy",
     "build:eleventy": "NODE_ENV=production eleventy",
     "build:vite": "NODE_ENV=production vite build",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "//": "Example of the built site running",
+    "prod": "NODE_ENV=production npm run build && serve _site"
   },
   "author": "",
   "license": "ISC"

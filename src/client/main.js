@@ -10,7 +10,14 @@ function init() {
   // Wait some arbitrary time, then populate it
   setTimeout(() => {
     const successNode = document.createElement("p");
-    successNode.innerText = "Vite is serving the script correctly!";
+    // Let's verify that Vite is injecting environment variables
+    // @see https://vitejs.dev/guide/env-and-mode.html#env-variables
+    if (import.meta.env.DEV === true) {
+      successNode.innerText = "Vite is serving the script correctly!";
+    }
+    if (import.meta.env.PROD === true) {
+      successNode.innerText = "Vite has built the files statically and Eleventy injected the correct script tag!";
+    }
     alertNode.appendChild(successNode);
   }, 400);
 }
