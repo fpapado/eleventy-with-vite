@@ -16,7 +16,10 @@
     "dev": "concurrently npm:dev:*",
     "dev:eleventy": "eleventy --serve",
     "dev:vite": "vite",
-    "build": "",
+    "//": "In production, run Vite and Eleventy in sequence, because we want to read the asset manifest to inject scripts in our templates",
+    "build": "NODE_ENV=production npm run build:vite && npm run build:eleventy",
+    "build:eleventy": "eleventy",
+    "build:vite": "vite build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
