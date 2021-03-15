@@ -21,17 +21,42 @@ Production:
 
 You can test this out shortly with `npm run prod`, to simulate a production-parity build and run.
 
-## Alternative designs
-
-[Vite has a programmatic JavaScript API](https://vitejs.dev/guide/api-javascript.html). In principle, you could use that API to run it inside of your Eleventy script. I am not a big fan of that approach. Both Eleventy and Vite are designed as long-running processes in development mode. These processes like being in charge of watching, and running them separately allows for the fast refresh cycles. Your mileage may vary!
-
 ## More things to do
 
-If you are using plugins that output to the HTML, you must do the wiring yourself.
+If you are using plugins that modify the HTML, you must do the wiring yourself.
+This can range from slightly manual and annoying, to incredibly annoying :)
 
 For example, [the Vite docs describe how to set up the React Refresh plugin in this context](vite-react-refresh).
 
-Another example is the [plugin-legacy]() which builds and outputs scripts compatible with browsers that do not suppport `script[type="module"]`.
+Another example is the [plugin-legacy]() which builds and outputs scripts compatible with browsers that do not suppport `script[type="module"]`. It also outputs inline scripts to detect a buggy version of Safari, which did not respect the `nomodule` attribute on scripts. All of that would ideally 
+
+## Alternative designs
+
+The design taken here is not perfect. It requires manual templating of the scripts, and requires significant work to integrate HTML transformations beyond that. Many plugins like having the ability to output HTML, and currently the plugin API does not expose that information.
+
+### SSR API
+
+Vite has a Server-Side Rendering API, aiming to provide SSR support for React, Vue and so on. However, it is also possible to use that API just to do the HTML transformations.
+
+In that case, a sketch pipeline would look like this:
+- Do the setup for Vite SSR
+- Run Eleventy to generate HTML files
+- After an HTML file is built, pass it to the `transformIndexHtml` function that Vite exposes
+- Serve / leave in output directory
+
+For running Vite on the HTML files, you could do it as an eleventy plugin, instead of reading the files yourself. This is not far off from generating the tags in a shortcode.
+
+You could opt to do this only in production, or also in development.
+
+The upside of this approach is that you can use something closer to the "regular" Vite HTML entry, without having to worry about creating the script tags yourself. While adding script tags is not a huge hassle, the realy upside is when you have plugins that transform HTML. In those cases, you would need to duplicate a lot of their logic, to inject things into HTML correctly. Being able to leverage a single pipeline is appealing, and as I'm typing this I'm becoming more convinced of it :)
+
+The downside is that I'm not sure how watching works (refer to the next section's Programmatic API considerations). Would changing a page cause Vite to refresh? Would changing scripts cause Eleventy to refresh? Neither? What are the false positives or negatives, if any?
+
+### Programmatic API
+
+[Vite has a programmatic JavaScript API](https://vitejs.dev/guide/api-javascript.html). In principle, you could use that API to run it inside of your Eleventy script. I am not a big fan of that approach. Both Eleventy and Vite are designed as long-running processes in development mode. These processes like being in charge of watching, and running them separately allows for the fast refresh cycles. Your mileage may vary!
+
+
 
 ### Styles and CSS pre-processing
 
