@@ -3,9 +3,11 @@ import "vite/dynamic-import-polyfill";
 function init() {
   // A demo: add an element to the document, then announce it
   const alertNode = document.createElement("div");
+  const mainNode = document.querySelector("main");
+
   alertNode.setAttribute("role", "status");
   alertNode.setAttribute("aria-live", "polite");
-  document.body.appendChild(alertNode);
+  mainNode.appendChild(alertNode);
 
   // Wait some arbitrary time, then populate it
   setTimeout(() => {
@@ -16,7 +18,8 @@ function init() {
       successNode.innerText = "Vite is serving the script correctly!";
     }
     if (import.meta.env.PROD === true) {
-      successNode.innerText = "Vite has built the files statically and Eleventy injected the correct script tag!";
+      successNode.innerText =
+        "Vite has built the files statically and Eleventy injected the correct script tag!";
     }
     alertNode.appendChild(successNode);
   }, 400);
