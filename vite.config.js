@@ -23,7 +23,7 @@ export default defineConfig({
     manifest: true,
     rollupOptions: {
       // This is critical: overwrite default .html entry
-      input: "/src/client/main.jsx",
+      input: "/src/client/main.tsx",
     },
   },
 });
