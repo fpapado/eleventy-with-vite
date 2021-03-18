@@ -18,34 +18,49 @@ module.exports = function (eleventyConfig) {
   // and location of manifest.json
   // you could probably read vite.config.js and get that information directly
   // @see https://vitejs.dev/guide/backend-integration.html
+  eleventyConfig.addNunjucksAsyncShortcode("viteScriptTag", viteScriptTag);
   eleventyConfig.addNunjucksAsyncShortcode(
-    "viteScriptTag",
-    async function (entryFilename) {
-      // We want an entryFilename, because in practice you might have multiple entrypoints
-      // This is similar to how you specify an entry in development more
-      if (!entryFilename) {
-        throw new Error(
-          "You must specify an entryFilename, so that vite-script can find the correct file."
-        );
-      }
-      const manifest = await fs.readFile(
-        path.resolve(process.cwd(), "_site", "manifest.json")
-      );
-      const parsed = JSON.parse(manifest);
-
-      let entryChunk = parsed[entryFilename];
-      if (!entryChunk) {
-        const possibleEntries = Object.values(parsed)
-          .filter((chunk) => chunk.isEntry === true)
-          .map((chunk) => `"${chunk.src}"`)
-          .join(`, `);
-        throw new Error(
-          `No entry for ${entryFilename} found in _site/manifest.json. Valid entries in manifest: ${possibleEntries}`
-        );
-      }
-      return `<script type="module" src="${entryChunk.file}"></script>`;
-    }
+    "viteLegacyScriptTag",
+    viteLegacyScriptTag
   );
+
+  async function viteScriptTag(entryFilename) {
+    const entryChunk = await getChunkInformationFor(entryFilename);
+    return `<script type="module" src="${entryChunk.file}"></script>`;
+  }
+
+  async function viteLegacyScriptTag(entryFilename) {
+    const entryChunk = await getChunkInformationFor(entryFilename);
+    return `<script nomodule src="${entryChunk.file}"></script>`;
+  }
+
+  async function getChunkInformationFor(entryFilename) {
+    // We want an entryFilename, because in practice you might have multiple entrypoints
+    // This is similar to how you specify an entry in development more
+    if (!entryFilename) {
+      throw new Error(
+        "You must specify an entryFilename, so that vite-script can find the correct file."
+      );
+    }
+    const manifest = await fs.readFile(
+      path.resolve(process.cwd(), "_site", "manifest.json")
+    );
+    const parsed = JSON.parse(manifest);
+
+    let entryChunk = parsed[entryFilename];
+
+    if (!entryChunk) {
+      const possibleEntries = Object.values(parsed)
+        .filter((chunk) => chunk.isEntry === true)
+        .map((chunk) => `"${chunk.src}"`)
+        .join(`, `);
+      throw new Error(
+        `No entry for ${entryFilename} found in _site/manifest.json. Valid entries in manifest: ${possibleEntries}`
+      );
+    }
+
+    return entryChunk;
+  }
 
   return {
     templateFormats: ["md", "njk", "html"],

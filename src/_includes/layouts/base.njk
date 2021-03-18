@@ -31,6 +31,8 @@
     {% if build.env == "production" %}
         {# We must read the production scripts from the Vite manifest. We defer that logic to a custom shortcode #}
         {% viteScriptTag "src/client/main.js" %}
+        {% viteLegacyScriptTag "vite/legacy-polyfills" %}
+        {% viteLegacyScriptTag "src/client/main-legacy.js" %}
     {% else %}
         <script type="module" src="http://localhost:3000/@vite/client"></script>
         <script type="module" src="http://localhost:3000/src/client/main.js"></script>
