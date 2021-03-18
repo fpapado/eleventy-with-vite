@@ -1,7 +1,11 @@
-import React from "react";
+import React, { StrictMode } from "react";
 
 function App() {
-  return <p>Hello from React!</p>;
+  return (
+    <StrictMode>
+      <p>Hello from React!</p>
+    </StrictMode>
+  );
 }
 
 export default App;
