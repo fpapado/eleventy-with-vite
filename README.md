@@ -13,7 +13,7 @@ Development:
 Production:
 - The core idea is that Vite no longer runs a development server, so we must get the information about the scripts and assets up-front
 - Eleventy and Vite run in sequence (Vite first)
-- Vite takes the entry point (`src/client/main.js`, specified in `vite.config.js`), and builds the app from there. It outputs it under `_site/assets`, as specified in `vite.config.js`
+- Vite takes the entry point (`src/client/main.jsx`, specified in `vite.config.js`), and builds the app from there. It outputs it under `_site/assets`, as specified in `vite.config.js`
 - Vite outputs a manifest (a JSON file mapping scripts to their output, and auxiliary information) to `_site/manifest.json`
 - Eleventy runs
 - As Eleventy processes each page with the base template, a custom Eleventy shortcode (`viteScriptTag`) reads `_site/manifest.json`, finds the entry point specified, and injects its output script as script[type="module"]

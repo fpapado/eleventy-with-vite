@@ -30,12 +30,24 @@
     #}
     {% if build.env == "production" %}
         {# We must read the production scripts from the Vite manifest. We defer that logic to a custom shortcode #}
-        {% viteScriptTag "src/client/main.js" %}
+        {% viteScriptTag "src/client/main.jsx" %}
         {% viteLegacyScriptTag "vite/legacy-polyfills" %}
-        {% viteLegacyScriptTag "src/client/main-legacy.js" %}
+        {% viteLegacyScriptTag "src/client/main-legacy.jsx" %}
     {% else %}
+        {# Set up @vitejs/plugin-react-refresh preamble #}
+        <script type="module">
+            import RefreshRuntime from "http://localhost:3000/@react-refresh"
+            RefreshRuntime.injectIntoGlobalHook(window) 
+            window.$RefreshReg$ = () => {}
+            window.$RefreshSig$ = () => (type) => type
+            window.__vite_plugin_react_preamble_installed__ = true
+        </script>
+
+        {# The vite development client #}
         <script type="module" src="http://localhost:3000/@vite/client"></script>
-        <script type="module" src="http://localhost:3000/src/client/main.js"></script>
+
+        {# The main script entry for development (pointing to vite) #}
+        <script type="module" src="http://localhost:3000/src/client/main.jsx"></script>
     {% endif %}
 </body>
 </html>
