@@ -74,7 +74,9 @@ You can test this out shortly with `npm run prod`, to simulate a production-pari
 
 ## Styles and CSS pre-processing
 
-I have left these out from this example. It should be possible to inject those with the information from Vite's `manifest.json`, but I haven't gotten to it yet.
+This demo now includes CSS styles, imported from `main.js`. The nice thing about this is that you get Vite's fast reloading for CSS as well. Keep in mind that this will cause a flash of content in development, on initial page load. In production, the CSS is inserted as `link[rel=stylesheet` in the `head`, so it should be fine. The information comes from `manifest.json`, so I expect it to work well.
+
+Double-check if you end up creating more elaborate CSS pipelines :)
 
 ## More things to do
 
