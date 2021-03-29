@@ -1,22 +1,17 @@
 {
   "name": "eleventy-with-vite",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "//": "Development",
-    "dev": "concurrently --raw npm:dev:*",
-    "dev:tsc:watch": "tsc --watch --preserveWatchOutput",
-    "dev:eleventy": "eleventy --serve",
-    "dev:vite": "vite",
-    "//": "Build for production",
-    "build": "npm run build:tsc && npm run build:vite && npm run build:eleventy",
-    "build:tsc": "tsc",
-    "build:eleventy": "eleventy",
-    "build:vite": "vite build",
-    "//": "Example of the built site running",
-    "prod": "NODE_ENV=production npm run build && serve _site"
+  "description": "A demo or template for integrating a Vite build with Eleventy",
+  "author": "Fotis Papadogeorgopoulos (fotis@fpapado.com)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/fpapado/eleventy-with-vite"
   },
+  "bugs": {
+    "url": "https://github.com/fpapado/eleventy-with-vite"
+  },
+  "main": "index.js",
   "dependencies": {
     "react": "^17.0.1",
     "react-dom": "^17.0.1"
@@ -31,8 +26,17 @@
     "concurrently": "^6.0.0",
     "serve": "^11.3.2",
     "typescript": "^4.2.3",
-    "vite": "^2.0.5"
+    "vite": "^2.1.2"
   },
-  "author": "",
-  "license": "ISC"
+  "scripts": {
+    "dev": "concurrently --raw npm:dev:*",
+    "dev:tsc:watch": "tsc --watch --preserveWatchOutput",
+    "dev:eleventy": "eleventy --serve",
+    "dev:vite": "vite",
+    "build": "npm run build:tsc && npm run build:vite && npm run build:eleventy",
+    "build:tsc": "tsc",
+    "build:eleventy": "eleventy",
+    "build:vite": "vite build",
+    "prod": "NODE_ENV=production npm run build && serve _site"
+  }
 }

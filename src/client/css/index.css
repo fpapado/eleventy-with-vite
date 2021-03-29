@@ -1,0 +1,18 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    line-height: 1.45;
+    font-size: 1.125rem;
+}
+
+body {
+    max-width: 65ch;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1rem;
+}
