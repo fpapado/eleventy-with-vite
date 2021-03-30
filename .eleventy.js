@@ -7,7 +7,7 @@ const OUTPUT_DIR = "_site";
 
 // This will change both Eleventy's pathPrefix, and the one output by the
 // vite-related shortcodes below. Double-check if you change this, as this is only a demo :)
-const PATH_PREFIX = '/';
+const PATH_PREFIX = "/";
 
 module.exports = function (eleventyConfig) {
   // Disable whitespace-as-code-indicator, which breaks a lot of markup
@@ -30,10 +30,37 @@ module.exports = function (eleventyConfig) {
     "viteLinkStylesheetTags",
     viteLinkStylesheetTags
   );
+  eleventyConfig.addNunjucksAsyncShortcode(
+    "viteLinkModulePreloadTags",
+    viteLinkModulePreloadTags
+  );
 
   async function viteScriptTag(entryFilename) {
     const entryChunk = await getChunkInformationFor(entryFilename);
     return `<script type="module" src="${PATH_PREFIX}${entryChunk.file}"></script>`;
+  }
+
+  /* Generate link[rel=modulepreload] tags for a script's imports */
+  /* TODO(fpapado): Consider link[rel=prefetch] for dynamic imports, or some other signifier */
+  async function viteLinkModulePreloadTags(entryFilename) {
+    const entryChunk = await getChunkInformationFor(entryFilename);
+    if (!entryChunk.imports || entryChunk.imports.length === 0) {
+      console.log(
+        `The script for ${entryFilename} has no imports. Nothing to preload.`
+      );
+      return "";
+    }
+    /* There can be multiple import files per entry, so assume many by default */
+    /* Each entry in .imports is a filename referring to a chunk in the manifest; we must resolve it to get the output path on disk.
+     */
+    const allPreloadTags = await Promise.all(
+      entryChunk.imports.map(async (importEntryFilename) => {
+        const chunk = await getChunkInformationFor(importEntryFilename);
+        return `<link rel="modulepreload" href="${PATH_PREFIX}${chunk.file}"></link>`;
+      })
+    );
+
+    return allPreloadTags.join("\n");
   }
 
   async function viteLinkStylesheetTags(entryFilename) {
@@ -44,7 +71,10 @@ module.exports = function (eleventyConfig) {
     }
     /* There can be multiple CSS files per entry, so assume many by default */
     return entryChunk.css
-      .map((cssFile) => `<link rel="stylesheet" href="${PATH_PREFIX}${cssFile}"></link>`)
+      .map(
+        (cssFile) =>
+          `<link rel="stylesheet" href="${PATH_PREFIX}${cssFile}"></link>`
+      )
       .join("\n");
   }
 

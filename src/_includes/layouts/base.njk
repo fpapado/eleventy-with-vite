@@ -9,6 +9,7 @@
     {% if build.env == "production" %}
         {# Add any CSS from the main script #}
         {% viteLinkStylesheetTags "src/client/main.js" %}
+        {% viteLinkModulePreloadTags "src/client/main.js" %}
     {% endif %}
 </head>
 <body>
