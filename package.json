@@ -17,6 +17,7 @@
     "@11ty/eleventy": "^0.12.1",
     "@vitejs/plugin-legacy": "^1.3.2",
     "concurrently": "^6.0.0",
+    "cross-env": "^7.0.3",
     "serve": "^11.3.2",
     "vite": "^2.1.3"
   },
@@ -25,8 +26,8 @@
     "dev:eleventy": "eleventy --serve",
     "dev:vite": "vite",
     "build": "npm run build:vite && npm run build:eleventy",
-    "build:eleventy": "NODE_ENV=production eleventy",
-    "build:vite": "NODE_ENV=production vite build",
-    "prod": "NODE_ENV=production npm run build && serve _site"
+    "build:eleventy": "cross-env NODE_ENV=production eleventy",
+    "build:vite": "cross-env NODE_ENV=production vite build",
+    "prod": "cross-env NODE_ENV=production npm run build && serve _site"
   }
 }
