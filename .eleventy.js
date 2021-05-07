@@ -103,7 +103,8 @@ class JsBundle {
     return chunk.css.map(cssFile => `<link rel="stylesheet" href="${this.staticConfig.pathPrefix}${cssFile}"></link>`).join("\n");
   }
 
-  preloadTag(file = "src/client/main.js") {
+  preloadTag(file) {
+    if (!file) file = this.defaultFile;
     console.log(`JsBundle.preloadTag: file = ${file}`)
     /* Generate link[rel=modulepreload] tags for a script's imports */
     /* TODO(fpapado): Consider link[rel=prefetch] for dynamic imports, or some other signifier */
