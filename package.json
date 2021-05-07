@@ -26,12 +26,14 @@
   },
   "scripts": {
     "dev": "node scripts/npm-run-dev.js",
+    "debug": "node scripts/npm-run-dev.js --debug",
     "dev:vite": "vite",
     "dev:eleventy": "eleventy --serve",
     "build": "cross-env NODE_ENV=production node scripts/npm-run-dev.js",
     "build:vite": "vite build",
     "build:eleventy": "eleventy",
     "prod": "npm-run-all -s build serve",
-    "serve": "node scripts/npm-run-serve.js"
+    "serve": "node scripts/npm-run-serve.js",
+    "test": "echo no tests specified"
   }
 }
