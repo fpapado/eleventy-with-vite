@@ -6,9 +6,8 @@ const markdownIt = require("markdown-it");
 
 const staticConfig = {
 
-  jsBundleEntryfiles: [
-    "src/client/main.js",
-  ],
+  jsBundleEntryDir: "src/client/",
+  jsBundleEntryFiles: [ "main.js" ],
   jsBundleDevserver: null, // will be set on runtime
   isProduction: (process.env.NODE_ENV == 'production'),
 
@@ -71,12 +70,13 @@ class JsBundle {
     // {% jsBundleHead "src/client/some-entrypoint.js" %}
     // {% jsBundleFoot "src/client/some-entrypoint.js" %}
 
-    this.defaultFile = this.staticConfig.jsBundleEntryfiles[0];
+    this.defaultFile = this.staticConfig.jsBundleEntryFiles[0];
   }
 
   chunk(file) {
     if (!file) throw new Error("file is empty");
-    const chunk = this.manifest[file];
+    // file can be relative to project root, or relative to jsBundleEntryDir
+    const chunk = this.manifest[file] || this.manifest[this.staticConfig.jsBundleEntryDir + file];
     if (chunk) return chunk;
     const possibleEntries = JSON.stringify(Object.values(this.manifest).filter(chunk => chunk.isEntry).map(chunk => chunk.src));
     throw new Error(`No entry for ${file} found in ${this.staticConfig.dir.output}/manifest.json. Valid entries in manifest: ${possibleEntries}`);

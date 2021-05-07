@@ -3,10 +3,21 @@ import legacy from "@vitejs/plugin-legacy";
 
 // defined in .eleventy.js
 const eleventyDirOutput = process.env.NODE_ELEVENTY_DIR_OUTPUT;
+const bundlerEntryDir = process.env.NODE_BUNDLER_ENTRY_DIR || '';
 const bundlerEntryFiles = process.env.NODE_BUNDLER_ENTRY_FILES?.split(',');
 
 if (!eleventyDirOutput) throw new Error('error: empty NODE_ELEVENTY_DIR_OUTPUT');
 if (!bundlerEntryFiles || bundlerEntryFiles.length == 0) throw new Error('error: empty NODE_BUNDLER_ENTRY_FILES');
+
+// This is critical: overwrite default index.html entry
+// https://vitejs.dev/guide/build.html#multi-page-app
+const assetPath = path => path.replace(/\.[^./]+$/, '');
+const rollupOptions = {
+  input: Object.fromEntries(bundlerEntryFiles.map(entryFile => (
+    [assetPath(entryFile), (bundlerEntryDir + entryFile)]
+  ))),
+};
+//console.dir({ bundlerEntryFiles, rollupOptions });
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -27,9 +38,8 @@ export default defineConfig({
     sourcemap: true,
     // This is critical: generate manifest.json in outDir
     manifest: true,
-    rollupOptions: bundlerEntryFiles.map(entryFile => ({
-      // This is critical: overwrite default .html entry
-      input: entryFile,
-    })),
+    
+    // https://vitejs.dev/guide/build.html#multi-page-app
+    rollupOptions,
   },
 });
