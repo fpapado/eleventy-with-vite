@@ -12,20 +12,23 @@
     "url": "https://github.com/fpapado/eleventy-with-vite"
   },
   "main": "index.js",
-  "dependencies": {},
   "devDependencies": {
     "@11ty/eleventy": "^0.12.1",
     "@vitejs/plugin-legacy": "^1.3.2",
+    "app-root-path": "^3.0.0",
     "concurrently": "^6.0.0",
-    "serve": "^11.3.2",
-    "vite": "^2.1.3",
+    "cross-env": "*",
+    "find-free-port-sync": "^1.0.0",
+    "npm-run": "^5.0.1",
     "npm-run-all": "*",
-    "cross-env": "*"
+    "open": "^8.0.8",
+    "serve": "^11.3.2",
+    "vite": "^2.1.3"
   },
   "scripts": {
-    "dev": "concurrently --prefix-colors cyan,magenta --names vite,11ty --kill-others true npm:dev:a:vite npm:dev:b:eleventy",
-    "dev:a:vite": "vite",
-    "dev:b:eleventy": "eleventy --serve",
+    "dev": "node scripts/npm-run-dev.js",
+    "dev:vite": "vite",
+    "dev:eleventy": "eleventy --serve",
     "build": "npm-run-all -s build:**",
     "build:a:vite": "cross-env NODE_ENV=production vite build",
     "build:b:eleventy": "cross-env NODE_ENV=production eleventy",

@@ -2,21 +2,28 @@ const fs = require("fs");
 const path = require("path");
 const markdownIt = require("markdown-it");
 
+
+
 const staticConfig = {
 
+  jsBundleEntryfiles: [
+    "src/client/main.js",
+  ],
+  jsBundleDevserver: null, // will be set on runtime
   isProduction: (process.env.NODE_ENV == 'production'),
-
-  jsBundleDevServer: 'http://localhost:3000', // TODO get from vite
-
-  templateFormats: ["md", "njk", "html"],
 
   pathPrefix: "/", // This will change both Eleventy's pathPrefix, and the one output by the
   // vite-related shortcodes below. Double-check if you change this, as this is only a demo :)
+
+
+
+  templateFormats: ["md", "njk", "html"],
 
   markdownTemplateEngine: "njk",
   htmlTemplateEngine: "njk",
   dataTemplateEngine: "njk",
   passthroughFileCopy: true,
+
   dir: {
     input: "src",
     output: "_site",
@@ -27,21 +34,47 @@ const staticConfig = {
   },
 };
 
+
+
+module.exports = function (eleventyConfig) {
+
+  if (!eleventyConfig) return staticConfig;
+
+
+
+  staticConfig.jsBundleDevserver = process.env.NODE_BUNDLER_DEVSERVER;
+  if (staticConfig.jsBundleDevserver) {
+    console.log(`use bundler on ${staticConfig.jsBundleDevserver}`)
+  }
+  // config is also called by `eleventy --help` -> ignore missing bundler
+  new JsBundle(staticConfig).addNunjucksShortcodes(eleventyConfig);
+
+
+
+  // Disable whitespace-as-code-indicator, which breaks a lot of markup
+  const configuredMdLibrary = markdownIt({ html: true }).disable("code");
+  eleventyConfig.setLibrary("md", configuredMdLibrary);
+
+  return staticConfig;
+};
+
+
+
 class JsBundle {
 
-  staticConfig = {}
-  manifest = false
   constructor(staticConfig) {
     this.staticConfig = staticConfig;
-    // TODO wait until vite has generated the manifest.json
     this.manifest = this.staticConfig.isProduction && JSON.parse(
       fs.readFileSync(this.staticConfig.dir.output + "/manifest.json"));
-    //this.defaultFile = "src/client/main.js"; // TODO
+    // default entrypoint for the bundler. in practice you might have multiple entrypoints
+    // then in the template, use
+    // {% jsBundleHead "src/client/some-entrypoint.js" %}
+    // {% jsBundleFoot "src/client/some-entrypoint.js" %}
+
+    this.defaultFile = this.staticConfig.jsBundleEntryfiles[0];
   }
 
   chunk(file) {
-    // We want an file, because in practice you might have multiple entrypoints
-    // This is similar to how you specify an entry in development mode
     if (!file) throw new Error("file is empty");
     const chunk = this.manifest[file];
     if (chunk) return chunk;
@@ -50,15 +83,17 @@ class JsBundle {
   }
 
   moduleScriptTag(file, attr) {
+    if (!file) file = this.defaultFile;
     const chunk = this.chunk(file);
     return `<script ${attr} src="${this.staticConfig.pathPrefix}${chunk.file}"></script>`;
   }
 
-  moduleTag(file = "src/client/main.js") { return this.moduleScriptTag(file, 'type="module"'); }
+  moduleTag(file) { return this.moduleScriptTag(file, 'type="module"'); }
 
-  scriptTag(file = "src/client/main.js") { return this.moduleScriptTag(file, 'nomodule'); }
+  scriptTag(file) { return this.moduleScriptTag(file, 'nomodule'); }
 
-  styleTag(file = "src/client/main.js") {
+  styleTag(file) {
+    if (!file) file = this.defaultFile;
     const chunk = this.chunk(file);
     if (!chunk.css || chunk.css.length === 0) {
       console.warn(`No css found for ${file} entry. Is that correct?`);
@@ -69,6 +104,7 @@ class JsBundle {
   }
 
   preloadTag(file = "src/client/main.js") {
+    console.log(`JsBundle.preloadTag: file = ${file}`)
     /* Generate link[rel=modulepreload] tags for a script's imports */
     /* TODO(fpapado): Consider link[rel=prefetch] for dynamic imports, or some other signifier */
     const chunk = this.chunk(file);
@@ -85,16 +121,18 @@ class JsBundle {
     })).join("\n");
   }
 
-  headTags(file = "src/client/main.js") {
+  headTags(file) {
+    if (!file) file = this.defaultFile;
     if (this.staticConfig.isProduction) {
       return [
         this.styleTag(file),
         this.preloadTag(file)
       ].join('\n');
-    } else return '';
+    } else return `<!-- JsBundle.headTags: no head includes in dev mode -->`;
   }
 
-  footTags(file = "src/client/main.js") {
+  footTags(file) {
+    if (!file) file = this.defaultFile;
     // We must split development  and production scripts
     // In development, vite runs a server to resolve and reload scripts
     // In production, the scripts are statically replaced at build-time 
@@ -110,8 +148,9 @@ class JsBundle {
       ].join('\n');
     } else {
       return [
-        `<script type="module" src="${this.staticConfig.jsBundleDevServer}/@vite/client"></script>`,
-        `<script type="module" src="${this.staticConfig.jsBundleDevServer}/${file}"></script>`,
+        `<!-- JsBundle.footTags: file = ${file} -->`,
+        `<script type="module" src="${this.staticConfig.jsBundleDevserver}/@vite/client"></script>`,
+        `<script type="module" src="${this.staticConfig.jsBundleDevserver}/${file}"></script>`,
       ].join('\n');
     }
   }
@@ -132,13 +171,3 @@ class JsBundle {
     return this; // chainable
   }
 }
-
-module.exports = function (eleventyConfig) {
-  // Disable whitespace-as-code-indicator, which breaks a lot of markup
-  const configuredMdLibrary = markdownIt({ html: true }).disable("code");
-  eleventyConfig.setLibrary("md", configuredMdLibrary);
-
-  new JsBundle(staticConfig).addNunjucksShortcodes(eleventyConfig);
-
-  return staticConfig;
-};
