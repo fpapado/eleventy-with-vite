@@ -17,7 +17,15 @@ const rollupOptions = {
     [assetPath(entryFile), (bundlerEntryDir + entryFile)]
   ))),
 };
-//console.dir({ bundlerEntryFiles, rollupOptions });
+// note on file locations:
+//   dev server -> ${path}
+//   prod build -> ${outDir}/assets/${key}.<hash>.js (see ${outDir}/manifest.json)
+//   ${key} can be a path, for example 'lib/some-lib/main'
+// debug
+Object.entries(rollupOptions.input).forEach(([key, path]) => {
+  console.log(`build.rollupOptions.input[${JSON.stringify(key)}]: ${path}`);
+});
+console.log(`build.outDir: ${eleventyDirOutput}`);
 
 // https://vitejs.dev/config/
 export default defineConfig({

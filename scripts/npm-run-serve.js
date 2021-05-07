@@ -5,7 +5,7 @@ const appRoot = require('app-root-path').path;
 let port = null;
 let doOpen = false;
 if (process.argv.includes('--open')) {
-  port = require('find-free-port-sync')();
+  port = require('find-free-port-sync')({ start: 8000 });
   console.log(`[serve] use port ${port}`);
   doOpen = true;
 }

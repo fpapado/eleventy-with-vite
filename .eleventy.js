@@ -6,7 +6,7 @@ const markdownIt = require("markdown-it");
 
 const staticConfig = {
 
-  jsBundleEntryDir: "src/client/",
+  jsBundleEntryDir: "src/client/", // this prefix is removed in production builds
   jsBundleEntryFiles: [ "main.js" ],
   jsBundleDevserver: null, // will be set on runtime
   isProduction: (process.env.NODE_ENV == 'production'),
@@ -42,10 +42,6 @@ module.exports = function (eleventyConfig) {
 
 
   staticConfig.jsBundleDevserver = process.env.NODE_BUNDLER_DEVSERVER;
-  if (staticConfig.jsBundleDevserver) {
-    console.log(`use bundler on ${staticConfig.jsBundleDevserver}`)
-  }
-  // config is also called by `eleventy --help` -> ignore missing bundler
   new JsBundle(staticConfig).addNunjucksShortcodes(eleventyConfig);
 
 
@@ -63,6 +59,12 @@ class JsBundle {
 
   constructor(staticConfig) {
     this.staticConfig = staticConfig;
+
+    if (staticConfig.jsBundleDevserver)
+      console.log(`use bundler on ${staticConfig.jsBundleDevserver}`)
+    else
+      console.log(`${__filename}: NODE_BUNDLER_DEVSERVER is empty`); // debug
+
     this.manifest = this.staticConfig.isProduction && JSON.parse(
       fs.readFileSync(this.staticConfig.dir.output + "/manifest.json"));
     // default entrypoint for the bundler. in practice you might have multiple entrypoints
@@ -76,6 +78,7 @@ class JsBundle {
   chunk(file) {
     if (!file) throw new Error("file is empty");
     // file can be relative to project root, or relative to jsBundleEntryDir
+    // paths in manifest are always relative to project root
     const chunk = this.manifest[file] || this.manifest[this.staticConfig.jsBundleEntryDir + file];
     if (chunk) return chunk;
     const possibleEntries = JSON.stringify(Object.values(this.manifest).filter(chunk => chunk.isEntry).map(chunk => chunk.src));
@@ -105,7 +108,6 @@ class JsBundle {
 
   preloadTag(file) {
     if (!file) file = this.defaultFile;
-    console.log(`JsBundle.preloadTag: file = ${file}`)
     /* Generate link[rel=modulepreload] tags for a script's imports */
     /* TODO(fpapado): Consider link[rel=prefetch] for dynamic imports, or some other signifier */
     const chunk = this.chunk(file);
@@ -151,7 +153,7 @@ class JsBundle {
       return [
         `<!-- JsBundle.footTags: file = ${file} -->`,
         `<script type="module" src="${this.staticConfig.jsBundleDevserver}/@vite/client"></script>`,
-        `<script type="module" src="${this.staticConfig.jsBundleDevserver}/${file}"></script>`,
+        `<script type="module" src="${this.staticConfig.jsBundleDevserver}/${this.staticConfig.jsBundleEntryDir}${file}"></script>`,
       ].join('\n');
     }
   }

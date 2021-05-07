@@ -8,14 +8,14 @@ const pkg = require(appRoot+'/package.json');
 const eleventy = {};
 eleventy.config = pkg.eleventy?.config || '.eleventy.js';
 eleventy.host = 'localhost';
-eleventy.port = findPort();
+eleventy.port = findPort({ start: 8000 });
 eleventy.devserver = `http://${eleventy.host}:${eleventy.port}`;
 eleventy.open = true; // open browser
 eleventy.staticConfig = require(appRoot+'/'+eleventy.config)();
 
 const bundler = {};
 bundler.host = 'localhost';
-bundler.port = findPort();
+bundler.port = findPort({ start: 8000 });
 bundler.devserver = `http://${bundler.host}:${bundler.port}`;
 bundler.entryDir = eleventy.staticConfig.jsBundleEntryDir || '';
 bundler.entryFiles = eleventy.staticConfig.jsBundleEntryFiles;
