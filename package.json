@@ -18,15 +18,20 @@
     "@vitejs/plugin-legacy": "^1.3.2",
     "concurrently": "^6.0.0",
     "serve": "^11.3.2",
-    "vite": "^2.1.3"
+    "vite": "^2.1.3",
+    "npm-run-all": "*",
+    "cross-env": "*"
   },
   "scripts": {
-    "dev": "concurrently npm:dev:*",
-    "dev:eleventy": "eleventy --serve",
-    "dev:vite": "vite",
-    "build": "npm run build:vite && npm run build:eleventy",
-    "build:eleventy": "NODE_ENV=production eleventy",
-    "build:vite": "NODE_ENV=production vite build",
-    "prod": "NODE_ENV=production npm run build && serve _site"
+    "dev": "concurrently --prefix-colors cyan,magenta --names vite,11ty --kill-others true npm:dev:a:vite npm:dev:b:eleventy",
+    "dev:a:vite": "vite",
+    "dev:b:eleventy": "eleventy --serve",
+    "build": "npm-run-all -s build:**",
+    "build:a:vite": "cross-env NODE_ENV=production vite build",
+    "build:b:eleventy": "cross-env NODE_ENV=production eleventy",
+    "prod": "npm-run-all -s prod:**",
+    "prod:a:build": "cross-env NODE_ENV=production npm run build",
+    "prod:b:serve": "serve _site",
+    "comment:prod:b:serve": "echo serve _site: _site should be dynamic"
   }
 }
