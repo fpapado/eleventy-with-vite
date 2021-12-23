@@ -11,22 +11,30 @@
   "bugs": {
     "url": "https://github.com/fpapado/eleventy-with-vite"
   },
-  "main": "index.js",
-  "dependencies": {},
   "devDependencies": {
-    "@11ty/eleventy": "^0.12.1",
-    "@vitejs/plugin-legacy": "^1.3.2",
-    "concurrently": "^6.0.0",
-    "serve": "^11.3.2",
-    "vite": "^2.1.3"
+    "@11ty/eleventy": "*",
+    "@vitejs/plugin-legacy": "*",
+    "app-root-path": "*",
+    "concurrently": "*",
+    "cross-env": "*",
+    "cross-spawn": "^7.0.3",
+    "find-free-port-sync": "*",
+    "npm-run": "*",
+    "npm-run-all": "*",
+    "open": "*",
+    "sirv-cli": "*",
+    "vite": "*"
   },
   "scripts": {
-    "dev": "concurrently npm:dev:*",
-    "dev:eleventy": "eleventy --serve",
+    "dev": "node scripts/npm-run-dev.js",
+    "debug": "node scripts/npm-run-dev.js --debug",
     "dev:vite": "vite",
-    "build": "npm run build:vite && npm run build:eleventy",
-    "build:eleventy": "NODE_ENV=production eleventy",
-    "build:vite": "NODE_ENV=production vite build",
-    "prod": "NODE_ENV=production npm run build && serve _site"
+    "dev:eleventy": "eleventy --serve",
+    "build": "cross-env NODE_ENV=production node scripts/npm-run-dev.js",
+    "build:vite": "vite build",
+    "build:eleventy": "eleventy",
+    "prod": "npm-run-all -s build serve",
+    "serve": "node scripts/npm-run-serve.js",
+    "test": "echo no tests specified"
   }
 }

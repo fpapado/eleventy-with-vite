@@ -1,132 +1,177 @@
-const fs = require("fs/promises");
+const fs = require("fs");
 const path = require("path");
 const markdownIt = require("markdown-it");
 
-const INPUT_DIR = "src";
-const OUTPUT_DIR = "_site";
 
-// This will change both Eleventy's pathPrefix, and the one output by the
-// vite-related shortcodes below. Double-check if you change this, as this is only a demo :)
-const PATH_PREFIX = "/";
+
+const staticConfig = {
+
+  jsBundleEntryDir: "src/client/", // this prefix is removed in production builds
+  jsBundleEntryFiles: [ "main.js" ],
+  jsBundleDevserver: null, // will be set on runtime
+  isProduction: (process.env.NODE_ENV == 'production'),
+
+  pathPrefix: "", // This will change both Eleventy's pathPrefix, and the one output by the
+  // vite-related shortcodes below. Double-check if you change this, as this is only a demo :)
+  // set to "/" if you want absolute paths, e.g. https://somedomain.com/assets/main.js
+
+
+
+  templateFormats: ["md", "njk", "html"],
+
+  markdownTemplateEngine: "njk",
+  htmlTemplateEngine: "njk",
+  dataTemplateEngine: "njk",
+  passthroughFileCopy: true,
+
+  dir: {
+    input: "src",
+    output: "_site",
+    // NOTE: These two paths are relative to dir.input
+    // @see https://github.com/11ty/eleventy/issues/232
+    includes: "_includes",
+    data: "_data",
+  },
+};
+
+
 
 module.exports = function (eleventyConfig) {
+
+  if (!eleventyConfig) return staticConfig;
+
+
+
+  staticConfig.jsBundleDevserver = process.env.NODE_BUNDLER_DEVSERVER;
+  new JsBundle(staticConfig).addNunjucksShortcodes(eleventyConfig);
+
+
+
   // Disable whitespace-as-code-indicator, which breaks a lot of markup
   const configuredMdLibrary = markdownIt({ html: true }).disable("code");
   eleventyConfig.setLibrary("md", configuredMdLibrary);
 
-  // Read Vite's manifest.json, and add script tags for the entry files
-  // You could decide to do more things here, such as adding preload/prefetch tags
-  // for dynamic segments
-  // NOTE: There is some hard-coding going on here, with regard to the assetDir
-  // and location of manifest.json
-  // you could probably read vite.config.js and get that information directly
-  // @see https://vitejs.dev/guide/backend-integration.html
-  eleventyConfig.addNunjucksAsyncShortcode("viteScriptTag", viteScriptTag);
-  eleventyConfig.addNunjucksAsyncShortcode(
-    "viteLegacyScriptTag",
-    viteLegacyScriptTag
-  );
-  eleventyConfig.addNunjucksAsyncShortcode(
-    "viteLinkStylesheetTags",
-    viteLinkStylesheetTags
-  );
-  eleventyConfig.addNunjucksAsyncShortcode(
-    "viteLinkModulePreloadTags",
-    viteLinkModulePreloadTags
-  );
+  return staticConfig;
+};
 
-  async function viteScriptTag(entryFilename) {
-    const entryChunk = await getChunkInformationFor(entryFilename);
-    return `<script type="module" src="${PATH_PREFIX}${entryChunk.file}"></script>`;
+
+
+class JsBundle {
+
+  constructor(staticConfig) {
+    this.staticConfig = staticConfig;
+
+    if (staticConfig.jsBundleDevserver)
+      console.log(`use bundler on ${staticConfig.jsBundleDevserver}`)
+    else
+      console.log(`${__filename}: NODE_BUNDLER_DEVSERVER is empty`); // debug
+
+    this.manifest = this.staticConfig.isProduction && JSON.parse(
+      fs.readFileSync(this.staticConfig.dir.output + "/manifest.json"));
+    // default entrypoint for the bundler. in practice you might have multiple entrypoints
+    // then in the template, use
+    // {% jsBundleHead "src/client/some-entrypoint.js" %}
+    // {% jsBundleFoot "src/client/some-entrypoint.js" %}
+
+    this.defaultFile = this.staticConfig.jsBundleEntryFiles[0];
   }
 
-  /* Generate link[rel=modulepreload] tags for a script's imports */
-  /* TODO(fpapado): Consider link[rel=prefetch] for dynamic imports, or some other signifier */
-  async function viteLinkModulePreloadTags(entryFilename) {
-    const entryChunk = await getChunkInformationFor(entryFilename);
-    if (!entryChunk.imports || entryChunk.imports.length === 0) {
-      console.log(
-        `The script for ${entryFilename} has no imports. Nothing to preload.`
-      );
+  chunk(file) {
+    if (!file) throw new Error("file is empty");
+    // file can be relative to project root, or relative to jsBundleEntryDir
+    // paths in manifest are always relative to project root
+    const chunk = this.manifest[file] || this.manifest[this.staticConfig.jsBundleEntryDir + file];
+    if (chunk) return chunk;
+    const possibleEntries = JSON.stringify(Object.values(this.manifest).filter(chunk => chunk.isEntry).map(chunk => chunk.src));
+    throw new Error(`No entry for ${file} found in ${this.staticConfig.dir.output}/manifest.json. Valid entries in manifest: ${possibleEntries}`);
+  }
+
+  moduleScriptTag(file, attr) {
+    if (!file) file = this.defaultFile;
+    const chunk = this.chunk(file);
+    return `<script ${attr} src="${this.staticConfig.pathPrefix}${chunk.file}"></script>`;
+  }
+
+  moduleTag(file) { return this.moduleScriptTag(file, 'type="module"'); }
+
+  scriptTag(file) { return this.moduleScriptTag(file, 'nomodule'); }
+
+  styleTag(file) {
+    if (!file) file = this.defaultFile;
+    const chunk = this.chunk(file);
+    if (!chunk.css || chunk.css.length === 0) {
+      console.warn(`No css found for ${file} entry. Is that correct?`);
+      return "";
+    }
+    /* There can be multiple CSS files per entry, so assume many by default */
+    return chunk.css.map(cssFile => `<link rel="stylesheet" href="${this.staticConfig.pathPrefix}${cssFile}"></link>`).join("\n");
+  }
+
+  preloadTag(file) {
+    if (!file) file = this.defaultFile;
+    /* Generate link[rel=modulepreload] tags for a script's imports */
+    /* TODO(fpapado): Consider link[rel=prefetch] for dynamic imports, or some other signifier */
+    const chunk = this.chunk(file);
+    if (!chunk.imports || chunk.imports.length === 0) {
+      console.log(`The script for ${file} has no imports. Nothing to preload.`);
       return "";
     }
     /* There can be multiple import files per entry, so assume many by default */
     /* Each entry in .imports is a filename referring to a chunk in the manifest; we must resolve it to get the output path on disk.
-     */
-    const allPreloadTags = await Promise.all(
-      entryChunk.imports.map(async (importEntryFilename) => {
-        const chunk = await getChunkInformationFor(importEntryFilename);
-        return `<link rel="modulepreload" href="${PATH_PREFIX}${chunk.file}"></link>`;
-      })
-    );
-
-    return allPreloadTags.join("\n");
+    */
+    return (chunk.imports.map((importfile) => {
+      const chunk = this.chunk(importfile);
+      return `<link rel="modulepreload" href="${this.staticConfig.pathPrefix}${chunk.file}"></link>`;
+    })).join("\n");
   }
 
-  async function viteLinkStylesheetTags(entryFilename) {
-    const entryChunk = await getChunkInformationFor(entryFilename);
-    if (!entryChunk.css || entryChunk.css.length === 0) {
-      console.warn(`No css found for ${entryFilename} entry. Is that correct?`);
-      return "";
+  headTags(file) {
+    if (!file) file = this.defaultFile;
+    if (this.staticConfig.isProduction) {
+      return [
+        this.styleTag(file),
+        this.preloadTag(file)
+      ].join('\n');
+    } else return `<!-- JsBundle.headTags: no head includes in dev mode -->`;
+  }
+
+  footTags(file) {
+    if (!file) file = this.defaultFile;
+    // We must split development  and production scripts
+    // In development, vite runs a server to resolve and reload scripts
+    // In production, the scripts are statically replaced at build-time 
+    //
+    // The build.env variable is assigned in src/_data/build.js
+    // @see https://vitejs.dev/guide/backend-integration.html#backend-integration
+    // @see https://www.11ty.dev/docs/data-js/#example-exposing-environment-variables
+    if (this.staticConfig.isProduction) {
+      return [
+        this.moduleTag(file),
+        this.scriptTag("vite/legacy-polyfills"),
+        this.scriptTag(file.replace(/\.js$/, '-legacy.js'))
+      ].join('\n');
+    } else {
+      return [
+        `<!-- JsBundle.footTags: file = ${file} -->`,
+        `<script type="module" src="${this.staticConfig.jsBundleDevserver}/@vite/client"></script>`,
+        `<script type="module" src="${this.staticConfig.jsBundleDevserver}/${this.staticConfig.jsBundleEntryDir}${file}"></script>`,
+      ].join('\n');
     }
-    /* There can be multiple CSS files per entry, so assume many by default */
-    return entryChunk.css
-      .map(
-        (cssFile) =>
-          `<link rel="stylesheet" href="${PATH_PREFIX}${cssFile}"></link>`
-      )
-      .join("\n");
   }
 
-  async function viteLegacyScriptTag(entryFilename) {
-    const entryChunk = await getChunkInformationFor(entryFilename);
-    return `<script nomodule src="${PATH_PREFIX}${entryChunk.file}"></script>`;
+  addNunjucksShortcodes(eleventyConfig, shortcode) {
+    const shortcodeDefault = {
+      //module: 'jsBundleModule', script: 'jsBundleScript',
+      //style: 'jsBundleStyle', preload: 'jsBundlePreload',
+      head: 'jsBundleHead', foot: 'jsBundleFoot',
+    };
+    shortcode = Object.assign({}, shortcodeDefault, shortcode || {});
+    //eleventyConfig.addNunjucksShortcode(shortcode.module, (...a) => this.moduleTag(...a));
+    //eleventyConfig.addNunjucksShortcode(shortcode.script, (...a) => this.scriptTag(...a));
+    //eleventyConfig.addNunjucksShortcode(shortcode.style, (...a) => this.styleTag(...a));
+    //eleventyConfig.addNunjucksShortcode(shortcode.preload, (...a) => this.preloadTag(...a));
+    eleventyConfig.addNunjucksShortcode(shortcode.head, (...a) => this.headTags(...a));
+    eleventyConfig.addNunjucksShortcode(shortcode.foot, (...a) => this.footTags(...a));
+    return this; // chainable
   }
-
-  async function getChunkInformationFor(entryFilename) {
-    // We want an entryFilename, because in practice you might have multiple entrypoints
-    // This is similar to how you specify an entry in development more
-    if (!entryFilename) {
-      throw new Error(
-        "You must specify an entryFilename, so that vite-script can find the correct file."
-      );
-    }
-
-    // TODO: Consider caching this call, to avoid going to the filesystem every time
-    const manifest = await fs.readFile(
-      path.resolve(process.cwd(), "_site", "manifest.json")
-    );
-    const parsed = JSON.parse(manifest);
-
-    let entryChunk = parsed[entryFilename];
-
-    if (!entryChunk) {
-      const possibleEntries = Object.values(parsed)
-        .filter((chunk) => chunk.isEntry === true)
-        .map((chunk) => `"${chunk.src}"`)
-        .join(`, `);
-      throw new Error(
-        `No entry for ${entryFilename} found in _site/manifest.json. Valid entries in manifest: ${possibleEntries}`
-      );
-    }
-
-    return entryChunk;
-  }
-
-  return {
-    templateFormats: ["md", "njk", "html"],
-    pathPrefix: PATH_PREFIX,
-    markdownTemplateEngine: "njk",
-    htmlTemplateEngine: "njk",
-    dataTemplateEngine: "njk",
-    passthroughFileCopy: true,
-    dir: {
-      input: INPUT_DIR,
-      output: OUTPUT_DIR,
-      // NOTE: These two paths are relative to dir.input
-      // @see https://github.com/11ty/eleventy/issues/232
-      includes: "_includes",
-      data: "_data",
-    },
-  };
-};
+}
