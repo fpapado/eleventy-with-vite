@@ -17,6 +17,7 @@
     "app-root-path": "*",
     "concurrently": "*",
     "cross-env": "*",
+    "cross-spawn": "^7.0.3",
     "find-free-port-sync": "*",
     "npm-run": "*",
     "npm-run-all": "*",

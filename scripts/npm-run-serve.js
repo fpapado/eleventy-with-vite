@@ -1,5 +1,6 @@
 const npmRun = require('npm-run')
 const appRoot = require('app-root-path').path;
+const spawn = require('cross-spawn');
 
 // open browser: pnpm run serve -- --open
 let port = null;
@@ -24,7 +25,7 @@ const args = [
 
 if (doOpen) args.push('--port', ''+port);
 
-npmRun.spawn(
+spawn(
   'sirv', args, {
   stdio: 'inherit', // show output
   detached: false,

@@ -2,6 +2,7 @@ const findPort = require('find-free-port-sync');
 const npmRun = require('npm-run')
 const appRoot = require('app-root-path').path;
 const open = require('open');
+const spawn = require('cross-spawn');
 
 const pkg = require(appRoot+'/package.json');
 
@@ -39,7 +40,7 @@ if (eleventy.staticConfig.isProduction) {
   envVars.push('NODE_ENV=production');
   //console.dir({ envVars });
   for (const buildScript of ['build:vite', 'build:eleventy']) {
-    npmRun.spawnSync(
+    spawn.sync(
       'cross-env', [
       ...envVars,
       'npm-run-all',
@@ -55,7 +56,7 @@ else {
   // start devserver
   console.log(`[dev] start bundler on ${bundler.devserver}`);
   //console.dir({ envVars });
-  const devProcess = npmRun.spawn(
+  const devProcess = spawn(
     'cross-env', [
     ...envVars,
     'concurrently',
